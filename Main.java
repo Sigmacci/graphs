@@ -1,11 +1,5 @@
 import java.security.Key;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -15,15 +9,33 @@ public class Main {
         bg.addVertex(3);
         bg.addVertex(4);
         bg.addVertex(5);
+        bg.addVertex(6);
+        bg.addVertex(7);
+        bg.addVertex(8);
+        bg.addVertex(9);
+        bg.addVertex(10);
         bg.addEdge(1, 2);
-        bg.addEdge(2, 5);
-        bg.addEdge(2, 4);
-        bg.addEdge(3, 1);
-        bg.addEdge(3, 2);
-        bg.addEdge(4, 3);
-        bg.addEdge(5, 4);
-        bg.addEdge(5, 1);
-        bg.getGraphMatrix();
+        bg.addEdge(1, 10);
+        bg.addEdge(2, 3);
+        bg.addEdge(2, 7);
+        bg.addEdge(3, 4);
+        bg.addEdge(4, 6);
+        bg.addEdge(5, 2);
+        bg.addEdge(5, 7);
+        bg.addEdge(6, 9);
+        bg.addEdge(7, 6);
+        bg.addEdge(7, 8);
+        bg.addEdge(7, 9);
+        bg.addEdge(8, 4);
+        bg.addEdge(8, 6);
+        bg.addEdge(8, 9);
+        bg.addEdge(10, 6);
+        bg.addEdge(10, 5);
+        // bg.getGraphMatrix();
+        bg.getAdjacencyMatrix();
+        bg.kahnSort();
+        bg.printSorted();
+        // bg.printList();
     }
 }
 
@@ -40,8 +52,8 @@ class Vertex {
 
 class Graph {
     ArrayList<Vertex> vList;
-    int adjacencyMatrix[][];
-    int graphMatrix[][];
+    public int adjacencyMatrix[][];
+    public int graphMatrix[][];
 
     public Graph() {
         vList = new ArrayList<>();
@@ -99,12 +111,12 @@ class Graph {
                     adjacencyMatrix[vList.indexOf(v)][vList.indexOf(vOut)] = 1;
                 }
         }
-        for (int i = 0; i < vList.size(); i++) {
-            for (int j = 0; j < vList.size(); j++) {
-                System.out.print(adjacencyMatrix[i][j] + " ");
-            }
-            System.out.println();
-        }
+        // for (int i = 0; i < adjacencyMatrix.length; i++) {
+        // for (int j = 0; j < adjacencyMatrix.length; j++) {
+        // System.out.print(adjacencyMatrix[i][j] + " ");
+        // }
+        // System.out.println();
+        // }
     }
 
     public void getGraphMatrix() {
@@ -146,6 +158,104 @@ class Graph {
                 System.out.print(graphMatrix[i][j] + " ");
             }
             System.out.println();
+        }
+    }
+
+    public void removeFromAdjMatrix(int key) {
+        Vertex vertex = vList.stream().filter(v -> v.key == key).findFirst().orElse(null);
+        int element = vList.indexOf(vertex);
+        for (int i = 0; i < vList.size(); i++) {
+            if (adjacencyMatrix[i][element] != 0) {
+                adjacencyMatrix[i][element] = 0;
+            }
+            if (adjacencyMatrix[element][i] != 0) {
+                adjacencyMatrix[element][i] = 0;
+            }
+        }
+        for (var v : vList) {
+            if (v.in.contains(vertex)) {
+                v.in.remove(vertex);
+            }
+            if (v.out.contains(vertex)) {
+                v.out.remove(vertex);
+            }
+        }
+        vList.remove(vertex);
+        for (int i = element; i < vList.size(); i++) {
+            for (int j = 0; j <= vList.size(); j++) {
+                adjacencyMatrix[i][j] = adjacencyMatrix[i + 1][j];
+                adjacencyMatrix[j][i] = adjacencyMatrix[j][i + 1];
+            }
+        }
+    }
+
+    Stack<Integer> keyList = new Stack<>();
+
+    public void printSorted() {
+        while (!keyList.isEmpty()) {
+            System.out.print(keyList.pop() + " ");
+        }
+    }
+
+    boolean cycle = false;
+
+    public void tajranSort() {
+        // 0 = white, 1 = gray, 2 = black
+        int i = 0;
+        int color[] = new int[adjacencyMatrix.length];
+        do {
+            if (color[i] == 0) {
+                next(color, i);
+            } else {
+                i++;
+            }
+        } while(!cycle && keyList.size() < vList.size());
+    }
+
+    private void next(int color[], int index) {
+        if (color[index] != 2) {
+            color[index] = 1;
+            for (int i = 0; i < adjacencyMatrix.length; i++) {
+                if (adjacencyMatrix[index][i] == 1 && color[i] == 0) {
+                    next(color, i);
+                }
+            }
+            color[index] = 2;
+            keyList.push(vList.get(index).key);
+        } else {
+            cycle = true;
+        }
+    }
+
+    public void kahnSort(){
+        int in_deg[] = new int[adjacencyMatrix.length];
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            for (int j = 0; j < adjacencyMatrix.length; j++) {
+                if (adjacencyMatrix[i][j] == -1) {
+                    in_deg[i]++;
+                }
+            }
+        }
+        Queue<Integer> q = new LinkedList<>();
+        for (int i = 0; i < in_deg.length; i++) {
+            if (in_deg[i] == 0) {
+                q.add(i);
+            }
+        }
+        while (!q.isEmpty()) {
+            int t = q.poll();
+            keyList.push(vList.get(t).key);
+            for (int n = 0; n < adjacencyMatrix.length; n++) {
+                if (adjacencyMatrix[t][n] == 1){
+                    in_deg[n]--;
+                    if (in_deg[n] == 0) {
+                        q.add(n);
+                    }
+                }
+            }
+        }
+        if (keyList.size() != vList.size()) {
+            System.out.println("The graph has a cycle.");
         }
     }
 
