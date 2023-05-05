@@ -1,4 +1,3 @@
-import java.security.Key;
 import java.util.*;
 
 public class Main {
@@ -31,9 +30,10 @@ public class Main {
         bg.addEdge(8, 9);
         bg.addEdge(10, 6);
         bg.addEdge(10, 5);
-        // bg.getGraphMatrix();
-        bg.getAdjacencyMatrix();
-        bg.kahnSort();
+        bg.getGraphMatrix();
+        // bg.tajranSortGM();
+        // bg.getAdjacencyMatrix();
+        bg.kahnSortGM();
         bg.printSorted();
         // bg.printList();
     }
@@ -127,22 +127,27 @@ class Graph {
         }
         graphMatrix = new int[vList.size()][vList.size() + 3];
         for (int i = 0; i < vList.size(); i++) {
-            if (!vList.get(i).in.isEmpty() && !vList.get(i).out.isEmpty()) {
-                graphMatrix[i][vList.size()] = vList.get(i).out.stream().min(Comparator.comparing(v -> v.key))
-                        .get().key;
-                graphMatrix[i][vList.size() + 1] = vList.get(i).in.stream().min(Comparator.comparing(v -> v.key))
-                        .get().key;
-                int index = i;
-                graphMatrix[i][vList.size() + 2] = vList.stream()
-                        .filter(v -> !v.in.contains(vList.get(index)) && !v.out.contains(vList.get(index))).findFirst()
-                        .orElse(null).key;
+            if (vList.get(i).out.isEmpty()) {
+                graphMatrix[i][vList.size()] = 0;
+            } else {
+                graphMatrix[i][vList.size()] = vList.get(i).out.get(0).key;
             }
+            if (vList.get(i).in.isEmpty()) {
+                graphMatrix[i][vList.size() + 1] = 0;
+            } else {
+                graphMatrix[i][vList.size() + 1] = vList.get(i).in.get(0).key;
+            }
+            int index = i;
+            graphMatrix[i][vList.size() + 2] = vList.stream()
+                    .filter(v -> !v.in.contains(vList.get(index)) && !v.out.contains(vList.get(index))).findFirst()
+                    .orElse(null).key;
             for (int j = 0; j < vList.size(); j++) {
                 if (vList.get(i).out.contains(vList.get(j))) {
                     graphMatrix[i][j] = vList.get(i).out.get(vList.get(i).out.size() - 1).key;
                 } else if (vList.get(i).in.contains(vList.get(j))) {
                     graphMatrix[i][j] = vList.get(i).in.get(vList.get(i).in.size() - 1).key + vList.size();
-                } else {
+                } else if (!(vList.get(i).in.size() + 1 == vList.size()
+                        || vList.get(i).out.size() + 1 == vList.size())) {
                     int last = 0;
                     for (var v : vList) {
                         if (!v.in.contains(vList.get(i)) && !v.out.contains(vList.get(i)))
@@ -150,15 +155,17 @@ class Graph {
                     }
                     int f = last;
                     graphMatrix[i][j] = -vList.stream().filter(v -> v.key == f).findFirst().orElse(null).key;
+                } else {
+                    graphMatrix[i][j] = 0;
                 }
             }
         }
-        for (int i = 0; i < vList.size(); i++) {
-            for (int j = 0; j < vList.size() + 3; j++) {
-                System.out.print(graphMatrix[i][j] + " ");
-            }
-            System.out.println();
-        }
+        // for (int i = 0; i < vList.size(); i++) {
+        //     for (int j = 0; j < vList.size() + 3; j++) {
+        //         System.out.print(graphMatrix[i][j] + " ");
+        //     }
+        //     System.out.println();
+        // }
     }
 
     public void removeFromAdjMatrix(int key) {
@@ -209,7 +216,7 @@ class Graph {
             } else {
                 i++;
             }
-        } while(!cycle && keyList.size() < vList.size());
+        } while (!cycle && keyList.size() < vList.size());
     }
 
     private void next(int color[], int index) {
@@ -227,7 +234,7 @@ class Graph {
         }
     }
 
-    public void kahnSort(){
+    public void kahnSort() {
         int in_deg[] = new int[adjacencyMatrix.length];
         for (int i = 0; i < adjacencyMatrix.length; i++) {
             for (int j = 0; j < adjacencyMatrix.length; j++) {
@@ -246,7 +253,7 @@ class Graph {
             int t = q.poll();
             keyList.push(vList.get(t).key);
             for (int n = 0; n < adjacencyMatrix.length; n++) {
-                if (adjacencyMatrix[t][n] == 1){
+                if (adjacencyMatrix[t][n] == 1) {
                     in_deg[n]--;
                     if (in_deg[n] == 0) {
                         q.add(n);
@@ -259,4 +266,99 @@ class Graph {
         }
     }
 
+    public void tajranSortGM() {
+        int i = 0;
+        int color[] = new int[vList.size()];
+        do {
+            if (color[i] == 0) {
+                dfsGM(i, color);
+            } else {
+                i++;
+            }
+        } while (!cycle && keyList.size() < vList.size());
+    }
+
+    private void dfsGM(int index, int[] color) {
+        if (color[index] != 2) {
+            color[index] = 1;
+            for (int i = 0; i < vList.size(); i++) {
+                if (graphMatrix[index][i] > 0 && graphMatrix[index][i] <= vList.size() && color[i] == 0) {
+                    dfsGM(i, color);
+                }
+            }
+            color[index] = 2;
+            keyList.push(vList.get(index).key);
+        } else {
+            cycle = true;
+            System.out.println("Graph has a cycle. Sort impossible");
+        }
+    }
+
+    public void kahnSortGM() {
+        int in_deg[] = new int[vList.size()];
+        for (int i = 0; i < vList.size(); i++) {
+            for (int j = 0; j < vList.size(); j++) {
+                if (graphMatrix[i][j] > vList.size()) {
+                    in_deg[i]++;
+                }
+            }
+        }
+        Queue<Integer> q = new LinkedList<>();
+        for (int i = 0; i < in_deg.length; i++) {
+            if (in_deg[i] == 0) {
+                q.add(i);
+            }
+        }
+        while (!q.isEmpty()) {
+            int t = q.poll();
+            keyList.push(vList.get(t).key);
+            for (int n = 0; n < vList.size(); n++) {
+                if (graphMatrix[t][n] > 0 && graphMatrix[t][n] <= vList.size()) {
+                    if (--in_deg[n] == 0) {
+                        q.add(n);
+                    }
+                }
+            }
+        }
+        if (keyList.size() != vList.size()) {
+            System.out.println("The graph has a cycle.");
+        }
+    }
+    // public void kahnSortGM() {
+    // int i = 0;
+    // int visit[] = new int[vList.size()];
+    // do {
+    // if (visit[i] == 0) {
+    // int j = toDelete(i, visit);
+    // keyList.push(vList.get(j + 1).key);
+    // visit[j] = 1;
+    // } else {
+    // i++;
+    // }
+    // } while (cycle && keyList.size() < vList.size());
+    // }
+
+    // private int toDelete(int index, int visit[]) {
+    // int i = index;
+    // if (visit[index] == -1) {
+    // cycle = true;
+    // } else if (visit[index] == 0) {
+    // visit[index] = -1;
+    // int a = graphMatrix[index][vList.size() + 1];
+    // if (graphMatrix[index][vList.size()+1] != 0) {
+    // while (true) {
+    // if (visit[a - 1] == 0) {
+    // i = toDelete(a - 1, visit);
+    // break;
+    // }
+    // if (graphMatrix[index][a - 1] - vList.size() == a) {
+    // break;
+    // }
+    // a = graphMatrix[index][a - 1] - vList.size();
+    // }
+    // }
+    // visit[index] = 0;
+    // }
+    // return i;
+    // }
 }
