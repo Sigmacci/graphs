@@ -1,39 +1,23 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         Graph bg = new Graph();
-        bg.addVertex(1);
-        bg.addVertex(2);
-        bg.addVertex(3);
-        bg.addVertex(4);
-        bg.addVertex(5);
-        bg.addVertex(6);
-        bg.addVertex(7);
-        bg.addVertex(8);
-        bg.addVertex(9);
-        bg.addVertex(10);
-        bg.addEdge(1, 2);
-        bg.addEdge(1, 10);
-        bg.addEdge(2, 3);
-        bg.addEdge(2, 7);
-        bg.addEdge(3, 4);
-        bg.addEdge(4, 6);
-        bg.addEdge(5, 2);
-        bg.addEdge(5, 7);
-        bg.addEdge(6, 9);
-        bg.addEdge(7, 6);
-        bg.addEdge(7, 8);
-        bg.addEdge(7, 9);
-        bg.addEdge(8, 4);
-        bg.addEdge(8, 6);
-        bg.addEdge(8, 9);
-        bg.addEdge(10, 6);
-        bg.addEdge(10, 5);
+        File file = new File("file.txt");
+        Scanner sc = new Scanner(file);
+        while (sc.hasNextLine()) {
+            int a = sc.nextInt();
+            int b = sc.nextInt();
+            bg.addEdge(a, b);
+        }
+        sc.close();
+        // bg.createAdjM(5);
         bg.getGraphMatrix();
-        // bg.tajranSortGM();
+        bg.tajranSortGM();
         // bg.getAdjacencyMatrix();
-        bg.kahnSortGM();
+        // bg.kahnSortGM();
         bg.printSorted();
         // bg.printList();
     }
@@ -64,6 +48,12 @@ class Graph {
     }
 
     public void addEdge(int from, int to) {
+        if (vList.stream().filter(v -> v.key == from).findFirst().orElse(null) == null) {
+            addVertex(from);
+        }
+        if (vList.stream().filter(v -> v.key == to).findFirst().orElse(null) == null) {
+            addVertex(to);
+        }
         Optional<Vertex> v1 = vList.stream().filter(v -> v.key == from).findFirst();
         Optional<Vertex> v2 = vList.stream().filter(v -> v.key == to).findFirst();
         if (v1.isPresent() && v2.isPresent()) {
@@ -161,10 +151,10 @@ class Graph {
             }
         }
         // for (int i = 0; i < vList.size(); i++) {
-        //     for (int j = 0; j < vList.size() + 3; j++) {
-        //         System.out.print(graphMatrix[i][j] + " ");
-        //     }
-        //     System.out.println();
+        // for (int j = 0; j < vList.size() + 3; j++) {
+        // System.out.print(graphMatrix[i][j] + " ");
+        // }
+        // System.out.println();
         // }
     }
 
@@ -324,41 +314,34 @@ class Graph {
             System.out.println("The graph has a cycle.");
         }
     }
-    // public void kahnSortGM() {
-    // int i = 0;
-    // int visit[] = new int[vList.size()];
-    // do {
-    // if (visit[i] == 0) {
-    // int j = toDelete(i, visit);
-    // keyList.push(vList.get(j + 1).key);
-    // visit[j] = 1;
-    // } else {
-    // i++;
-    // }
-    // } while (cycle && keyList.size() < vList.size());
-    // }
 
-    // private int toDelete(int index, int visit[]) {
-    // int i = index;
-    // if (visit[index] == -1) {
-    // cycle = true;
-    // } else if (visit[index] == 0) {
-    // visit[index] = -1;
-    // int a = graphMatrix[index][vList.size() + 1];
-    // if (graphMatrix[index][vList.size()+1] != 0) {
-    // while (true) {
-    // if (visit[a - 1] == 0) {
-    // i = toDelete(a - 1, visit);
-    // break;
-    // }
-    // if (graphMatrix[index][a - 1] - vList.size() == a) {
-    // break;
-    // }
-    // a = graphMatrix[index][a - 1] - vList.size();
-    // }
-    // }
-    // visit[index] = 0;
-    // }
-    // return i;
-    // }
+    private void generate(int size) {
+        cycle = false;
+        adjacencyMatrix = new int[size][size];
+        int color[] = new int[size];
+        for (int i = 0; i < size; i++) {
+            color[i] = 0;
+            for (int j = 0; j < size; j++) {
+                adjacencyMatrix[i][j] = 0;
+            }
+        }
+    }
+
+    public void createAdjM(int size) {
+        generate(size);
+        Random r = new Random();
+        for (int i = 1; i < size; i++) {
+            for (int j = i - 1; j >= 0; j--) {
+                if (r.nextInt(1) == 1)
+                    adjacencyMatrix[i][j] = 1;
+            }
+        }
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            for (int j = 0; j < adjacencyMatrix.length; j++) {
+                System.out.print(adjacencyMatrix[i][j] + " ");
+            }
+            System.out.println();
+        }
+    }
+
 }
