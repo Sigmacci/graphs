@@ -5,7 +5,7 @@ import java.util.*;
 public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         Graph bg = new Graph();
-        File file = new File("file.txt");
+        File file = new File("...");
         Scanner sc = new Scanner(file);
         while (sc.hasNextLine()) {
             int a = sc.nextInt();
