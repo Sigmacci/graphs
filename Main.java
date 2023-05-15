@@ -14,11 +14,12 @@ public class Main {
         }
         sc.close();
         // bg.createAdjM(5);
-        bg.getGraphMatrix();
-        bg.tajranSortGM();
-        // bg.getAdjacencyMatrix();
+        // bg.getGraphMatrix();
+        // bg.tajranSortGM();
+        bg.getAdjacencyMatrix();
+        bg.getHamiltonianCycle();
         // bg.kahnSortGM();
-        bg.printSorted();
+        // bg.printSorted();
         // bg.printList();
     }
 }
@@ -44,6 +45,9 @@ class Graph {
     }
 
     public void addVertex(int key) {
+        if (!vList.isEmpty()) {
+            vList.sort(Comparator.comparing((Vertex v) -> v.key));
+        }
         vList.add(new Vertex(key));
     }
 
@@ -341,6 +345,53 @@ class Graph {
                 System.out.print(adjacencyMatrix[i][j] + " ");
             }
             System.out.println();
+        }
+    }
+
+    int[] path;
+
+    private boolean hasHamiltonianCycle(int[] path, int position) {
+        int n = adjacencyMatrix.length;
+        if (position == n) {
+            if (adjacencyMatrix[path[position - 1]][path[0]] != 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            if (canGo(i, path, position)) {
+                path[position] = i;
+                if (hasHamiltonianCycle(path, position + 1))
+                    return true;
+                path[position] = -1;
+            }
+        }
+        return false;
+    }
+
+    private boolean canGo(int v, int[] path, int pos) {
+        if (adjacencyMatrix[path[pos - 1]][v] != 1)
+            return false;
+        for (int i = 0; i < pos; i++)
+            if (path[i] == v)
+                return false;
+
+        return true;
+    }
+
+    public void getHamiltonianCycle() {
+        path = new int[adjacencyMatrix.length];
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            path[i] = -1;
+        }
+        path[0] = 0;
+        if (!hasHamiltonianCycle(path, 1)) {
+            System.out.println("Graf nie zawiera cyklu Hamiltona");
+            return;
+        }
+        for (int i = 0; i < path.length; i++) {
+            System.out.print(path[i] + " ");
         }
     }
 
