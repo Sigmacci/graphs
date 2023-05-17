@@ -5,7 +5,7 @@ import java.util.*;
 public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         Graph bg = new Graph();
-        File file = new File("file.txt");
+        File file = new File("file1.txt");
         Scanner sc = new Scanner(file);
         while (sc.hasNextLine()) {
             int a = sc.nextInt();
@@ -16,11 +16,13 @@ public class Main {
         // bg.createAdjM(5);
         // bg.getGraphMatrix();
         // bg.tajranSortGM();
-        bg.getAdjacencyMatrix();
-        bg.getHamiltonianCycle();
+        // bg.getNotDirectedAdjacencyMatrix();
+        // bg.getHamiltonianCycleDir();
+        // System.out.println(bg.findpath());
         // bg.kahnSortGM();
         // bg.printSorted();
         // bg.printList();
+        bg.generateDirectedAdjM(6, 40);
     }
 }
 
@@ -38,6 +40,7 @@ class Vertex {
 class Graph {
     ArrayList<Vertex> vList;
     public int adjacencyMatrix[][];
+    public int ndAdjacencyMatrix[][];
     public int graphMatrix[][];
 
     public Graph() {
@@ -88,6 +91,46 @@ class Graph {
         }
     }
 
+    public void generateDirectedAdjM(int size, int concentration) {
+        double c = concentration / 100.0;
+        adjacencyMatrix = new int[size][size];
+        Random random = new Random();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (i != j && random.nextDouble() <= c) {
+                    adjacencyMatrix[i][j] = 1;
+                    adjacencyMatrix[j][i] = -1;
+                } else {
+                    adjacencyMatrix[i][j] = 0;
+                    adjacencyMatrix[j][i] = 0;
+                }
+            }
+        }
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                System.out.print(adjacencyMatrix[i][j] + " ");
+            }
+            System.out.println();
+        }
+    }
+    
+    public void generateNotDirectedAdjM(int size, int concentration) {
+        double c = concentration / 10.0;
+        ndAdjacencyMatrix = new int[size][size];
+        Random random = new Random();
+        for (int i = 0; i < size; i++) {
+            for (int j = i + 1; j < size; j++) {
+                if (random.nextDouble() <= c) {
+                    ndAdjacencyMatrix[i][j] = 1;
+                    ndAdjacencyMatrix[j][i] = 1;
+                } else {
+                    ndAdjacencyMatrix[i][j] = 0;
+                    ndAdjacencyMatrix[j][i] = 0;
+                }
+            }
+        }
+    }
+
     public void getAdjacencyMatrix() {
         adjacencyMatrix = new int[vList.size()][vList.size()];
         for (int i = 0; i < vList.size(); i++) {
@@ -111,6 +154,33 @@ class Graph {
         // }
         // System.out.println();
         // }
+    }
+
+    public void getNotDirectedAdjacencyMatrix() {
+        ndAdjacencyMatrix = new int[vList.size()][vList.size()];
+        for (int i = 0; i < vList.size(); i++) {
+            for (int j = 0; j < vList.size(); j++) {
+                ndAdjacencyMatrix[i][j] = 0;
+            }
+        }
+        for (Vertex v : vList) {
+            if (!v.in.isEmpty())
+                for (Vertex vIn : v.in) {
+                    ndAdjacencyMatrix[vList.indexOf(v)][vList.indexOf(vIn)] = 1;
+                }
+            if (!v.out.isEmpty())
+                for (Vertex vOut : v.out) {
+                    ndAdjacencyMatrix[vList.indexOf(v)][vList.indexOf(vOut)] = 1;
+                }
+        }
+        /*
+         * for (int i = 0; i < ndAdjacencyMatrix.length; i++) {
+         * for (int j = 0; j < ndAdjacencyMatrix.length; j++) {
+         * System.out.print(ndAdjacencyMatrix[i][j] + " ");
+         * }
+         * System.out.println();
+         * }
+         */
     }
 
     public void getGraphMatrix() {
@@ -351,9 +421,9 @@ class Graph {
     int[] path;
 
     private boolean hasHamiltonianCycle(int[] path, int position) {
-        int n = adjacencyMatrix.length;
+        int n = ndAdjacencyMatrix.length;
         if (position == n) {
-            if (adjacencyMatrix[path[position - 1]][path[0]] != 0) {
+            if (ndAdjacencyMatrix[path[position - 1]][path[0]] == 1) {
                 return true;
             } else {
                 return false;
@@ -371,7 +441,7 @@ class Graph {
     }
 
     private boolean canGo(int v, int[] path, int pos) {
-        if (adjacencyMatrix[path[pos - 1]][v] != 1)
+        if (ndAdjacencyMatrix[path[pos - 1]][v] == 0 && ndAdjacencyMatrix[v][path[pos - 1]] == 0)
             return false;
         for (int i = 0; i < pos; i++)
             if (path[i] == v)
@@ -381,8 +451,8 @@ class Graph {
     }
 
     public void getHamiltonianCycle() {
-        path = new int[adjacencyMatrix.length];
-        for (int i = 0; i < adjacencyMatrix.length; i++) {
+        path = new int[ndAdjacencyMatrix.length];
+        for (int i = 0; i < ndAdjacencyMatrix.length; i++) {
             path[i] = -1;
         }
         path[0] = 0;
@@ -393,6 +463,122 @@ class Graph {
         for (int i = 0; i < path.length; i++) {
             System.out.print(path[i] + " ");
         }
+    }
+
+    private boolean hasHamiltonianCycleDir(int[] path, int position) {
+        int n = vList.size();
+        if (position == n) {
+            if (vList.get(path[position - 1]).in.contains(vList.get(path[0]))
+                    || vList.get(path[position - 1]).out.contains(vList.get(path[0]))) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            if (canGo(i, path, position)) {
+                path[position] = i;
+                if (hasHamiltonianCycle(path, position + 1))
+                    return true;
+                path[position] = -1;
+            }
+        }
+        return false;
+    }
+
+    private boolean canGoDir(int v, int[] path, int pos) {
+        if (!vList.get(path[pos - 1]).out.contains(vList.get(v)))
+            return false;
+        for (int i = 0; i < pos; i++)
+            if (path[i] == v)
+                return false;
+
+        return true;
+    }
+
+    public void getHamiltonianCycleDir() {
+        path = new int[ndAdjacencyMatrix.length];
+        for (int i = 0; i < ndAdjacencyMatrix.length; i++) {
+            path[i] = -1;
+        }
+        path[0] = 0;
+        if (!hasHamiltonianCycle(path, 1)) {
+            System.out.println("Graf nie zawiera cyklu Hamiltona");
+            return;
+        }
+        for (int i = 0; i < path.length; i++) {
+            System.out.print(path[i] + " ");
+        }
+    }
+
+    private void dfsDir(Vertex v, Stack<Integer> stack) {
+        while (!v.out.isEmpty()) {
+            Vertex next = v.out.get(0);
+            v.out.remove(next);
+            dfsDir(next, stack);
+        }
+        stack.push(v.key);
+    }
+
+    public List<Integer> findEulerianCycle() {
+        Stack<Integer> stack = new Stack<>();
+        dfsDir(vList.get(0), stack);
+        for (Vertex v : vList) {
+            if (!v.out.isEmpty()) {
+                System.out.println("Graf nie zawiera cyklu Eulera");
+                return null;
+            }
+        }
+        List<Integer> eulerianCycle = new ArrayList<>();
+        while (!stack.isEmpty()) {
+            eulerianCycle.add(stack.pop());
+        }
+        return eulerianCycle;
+    }
+
+    public List<Integer> findpath() {
+        Vector<Integer> adjacent = new Vector<>();
+        for (int i = 0; i < ndAdjacencyMatrix.length; i++)
+            adjacent.add(accumulate(ndAdjacencyMatrix[i], 0));
+        int start = 0, numofodd = 0;
+        for (int i = ndAdjacencyMatrix.length - 1; i >= 0; i--) {
+            if (adjacent.elementAt(i) % 2 == 1) {
+                numofodd++;
+                start = i;
+            }
+        }
+        if (numofodd > 2) {
+            System.out.println("Graf nie zawiera cyklu Eulera");
+            return null;
+        }
+        Stack<Integer> stack = new Stack<>();
+        Vector<Integer> path = new Vector<>();
+        int current = start;
+        while (!stack.isEmpty() || accumulate(ndAdjacencyMatrix[current], 0) != 0) {
+            if (accumulate(ndAdjacencyMatrix[current], 0) == 0) {
+                path.add(current);
+                current = stack.pop();
+            } else {
+                for (int i = 0; i < ndAdjacencyMatrix.length; i++) {
+                    if (ndAdjacencyMatrix[current][i] == 1) {
+                        stack.push(current);
+                        ndAdjacencyMatrix[current][i] = 0;
+                        ndAdjacencyMatrix[i][current] = 0;
+                        current = i;
+                        break;
+                    }
+                }
+            }
+        }
+        path.add(current);
+        Collections.reverse(path);
+        return path;
+    }
+
+    private int accumulate(int[] arr, int sum) {
+        for (int i : arr)
+            sum += i;
+        return sum;
     }
 
 }
