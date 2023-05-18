@@ -22,7 +22,7 @@ public class Main {
         // bg.kahnSortGM();
         // bg.printSorted();
         // bg.printList();
-        bg.generateDirectedAdjM(6, 40);
+        bg.generateNotDirectedAdjM(6, 40);
     }
 }
 
@@ -47,12 +47,16 @@ class Graph {
         vList = new ArrayList<>();
     }
 
+    // Adding a vertex to a graph
+
     public void addVertex(int key) {
         if (!vList.isEmpty()) {
             vList.sort(Comparator.comparing((Vertex v) -> v.key));
         }
         vList.add(new Vertex(key));
     }
+
+    // Adding an edge to a graph
 
     public void addEdge(int from, int to) {
         if (vList.stream().filter(v -> v.key == from).findFirst().orElse(null) == null) {
@@ -91,45 +95,74 @@ class Graph {
         }
     }
 
-    public void generateDirectedAdjM(int size, int concentration) {
-        double c = concentration / 100.0;
-        adjacencyMatrix = new int[size][size];
+    // Adjacency matrix generator for directed graph (rather good one)
+
+    public void generateDirectedAdjM(int n, int concentration) {
+        int maxEdges = (int) (n * (n - 1) * concentration / 100);
+        adjacencyMatrix = new int[n][n];
         Random random = new Random();
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (i != j && random.nextDouble() <= c) {
-                    adjacencyMatrix[i][j] = 1;
-                    adjacencyMatrix[j][i] = -1;
-                } else {
-                    adjacencyMatrix[i][j] = 0;
-                    adjacencyMatrix[j][i] = 0;
-                }
+        int edges = 0;
+        while (edges < maxEdges) {
+            int from = random.nextInt(n);
+            int to = random.nextInt(n);
+            if (from != to && adjacencyMatrix[from][to] == 0) {
+                adjacencyMatrix[from][to] = 1;
+                edges++;
             }
         }
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
                 System.out.print(adjacencyMatrix[i][j] + " ");
             }
             System.out.println();
         }
     }
-    
-    public void generateNotDirectedAdjM(int size, int concentration) {
-        double c = concentration / 10.0;
-        ndAdjacencyMatrix = new int[size][size];
+
+    // Adjacency matrix generator for undirected graph (dunno if good one)
+
+    public void generateNotDirectedAdjM(int n, int concentration) {
+        int maxEdges = (int) (n * (n - 1) * concentration / 200);
+        ndAdjacencyMatrix = new int[n][n];
         Random random = new Random();
-        for (int i = 0; i < size; i++) {
-            for (int j = i + 1; j < size; j++) {
-                if (random.nextDouble() <= c) {
-                    ndAdjacencyMatrix[i][j] = 1;
-                    ndAdjacencyMatrix[j][i] = 1;
-                } else {
-                    ndAdjacencyMatrix[i][j] = 0;
-                    ndAdjacencyMatrix[j][i] = 0;
+        int edges = 0;
+        while (edges < maxEdges) {
+            int from = random.nextInt(n);
+            int to = random.nextInt(n);
+            if (from != to && ndAdjacencyMatrix[from][to] == 0 && ndAdjacencyMatrix[to][from] == 0) {
+                ndAdjacencyMatrix[from][to] = 1;
+                ndAdjacencyMatrix[to][from] = 1;
+                edges++;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                System.out.print(ndAdjacencyMatrix[i][j] + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    // Generating vList based on adjacency matrix
+
+    public void generateInOutLists(int n, int concentration) {
+        generateDirectedAdjM(n, concentration);
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            for (int j = 0 ; j < adjacencyMatrix.length; j++) {
+                if (adjacencyMatrix[i][j] == 1) {
+                    addEdge(i, j);
                 }
             }
         }
     }
+
+    // Generating matrix of graph (work smart not hard)
+
+    public void generateMatrixOfGraph(int n, int concentration) {
+        generateInOutLists(n, concentration);
+        getGraphMatrix();
+    }
+
+    // Filling adjacency matrix for directed graph
 
     public void getAdjacencyMatrix() {
         adjacencyMatrix = new int[vList.size()][vList.size()];
@@ -155,6 +188,8 @@ class Graph {
         // System.out.println();
         // }
     }
+
+    // Filling adjacency matrix for undirected graph
 
     public void getNotDirectedAdjacencyMatrix() {
         ndAdjacencyMatrix = new int[vList.size()][vList.size()];
@@ -182,6 +217,8 @@ class Graph {
          * }
          */
     }
+
+    // Filling "matrix of graph"
 
     public void getGraphMatrix() {
         vList.sort(Comparator.comparing(v -> v.key));
@@ -232,6 +269,8 @@ class Graph {
         // }
     }
 
+    // Removing an edge (or a vertex idk) from adjacency matrix
+
     public void removeFromAdjMatrix(int key) {
         Vertex vertex = vList.stream().filter(v -> v.key == key).findFirst().orElse(null);
         int element = vList.indexOf(vertex);
@@ -260,6 +299,8 @@ class Graph {
         }
     }
 
+    // Printing sorted sequence
+
     Stack<Integer> keyList = new Stack<>();
 
     public void printSorted() {
@@ -267,6 +308,8 @@ class Graph {
             System.out.print(keyList.pop() + " ");
         }
     }
+
+    // Tarjan's topological sort using adjacency matrix
 
     boolean cycle = false;
 
@@ -297,6 +340,8 @@ class Graph {
             cycle = true;
         }
     }
+
+    // Kahn's topological sort using adjacency matrix
 
     public void kahnSort() {
         int in_deg[] = new int[adjacencyMatrix.length];
@@ -330,6 +375,8 @@ class Graph {
         }
     }
 
+    // Tarjan's topological sort using "matrix of graph"
+
     public void tajranSortGM() {
         int i = 0;
         int color[] = new int[vList.size()];
@@ -357,6 +404,8 @@ class Graph {
             System.out.println("Graph has a cycle. Sort impossible");
         }
     }
+
+    // Kahn's topological sort using "matrix of graph"
 
     public void kahnSortGM() {
         int in_deg[] = new int[vList.size()];
@@ -389,6 +438,8 @@ class Graph {
         }
     }
 
+    // dead code ;-;
+
     private void generate(int size) {
         cycle = false;
         adjacencyMatrix = new int[size][size];
@@ -417,6 +468,8 @@ class Graph {
             System.out.println();
         }
     }
+
+    // Finding Hamiltonian cycle in undirected graph using adjacency matrix
 
     int[] path;
 
@@ -465,6 +518,8 @@ class Graph {
         }
     }
 
+    // Finding Hamiltonian cycle in directed graph using list of successors
+
     private boolean hasHamiltonianCycleDir(int[] path, int position) {
         int n = vList.size();
         if (position == n) {
@@ -476,7 +531,7 @@ class Graph {
             }
         }
         for (int i = 0; i < n; i++) {
-            if (canGo(i, path, position)) {
+            if (canGoDir(i, path, position)) {
                 path[position] = i;
                 if (hasHamiltonianCycle(path, position + 1))
                     return true;
@@ -502,7 +557,7 @@ class Graph {
             path[i] = -1;
         }
         path[0] = 0;
-        if (!hasHamiltonianCycle(path, 1)) {
+        if (!hasHamiltonianCycleDir(path, 1)) {
             System.out.println("Graf nie zawiera cyklu Hamiltona");
             return;
         }
@@ -510,6 +565,8 @@ class Graph {
             System.out.print(path[i] + " ");
         }
     }
+
+    // Finding Eulerian cycle in undirected graph using adjacency matrix
 
     private void dfsDir(Vertex v, Stack<Integer> stack) {
         while (!v.out.isEmpty()) {
@@ -536,7 +593,9 @@ class Graph {
         return eulerianCycle;
     }
 
-    public List<Integer> findpath() {
+    // Finding Eulerian cycle in directed graph using list of successors
+
+    public List<Integer> findEulerianCycleDir() {
         Vector<Integer> adjacent = new Vector<>();
         for (int i = 0; i < ndAdjacencyMatrix.length; i++)
             adjacent.add(accumulate(ndAdjacencyMatrix[i], 0));
