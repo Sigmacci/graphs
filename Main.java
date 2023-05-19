@@ -1,11 +1,14 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class Main {
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         Graph bg = new Graph();
-        File file = new File("file1.txt");
+        File file = new File("file.txt");
         Scanner sc = new Scanner(file);
         while (sc.hasNextLine()) {
             int a = sc.nextInt();
@@ -16,13 +19,22 @@ public class Main {
         // bg.createAdjM(5);
         // bg.getGraphMatrix();
         // bg.tajranSortGM();
-        // bg.getNotDirectedAdjacencyMatrix();
+        bg.getNotDirectedAdjacencyMatrix();
         // bg.getHamiltonianCycleDir();
         // System.out.println(bg.findpath());
         // bg.kahnSortGM();
         // bg.printSorted();
         // bg.printList();
-        bg.generateNotDirectedAdjM(6, 40);
+        // bg.generateInOutLists(1000, 50);
+        System.out.println(bg.findEulerianCycle());
+        // bg.generateInOutLists(1000, 10);
+        // long start = System.nanoTime();
+        // bg.findEulerianCycle();
+        // long finish = System.nanoTime();
+        // FileWriter fileWriter = new FileWriter("Test3/output1.txt", true);
+        // PrintWriter printWriter = new PrintWriter(fileWriter, false);
+        // printWriter.println((finish - start) / 1000000.0);
+        // printWriter.close();
     }
 }
 
@@ -110,12 +122,12 @@ class Graph {
                 edges++;
             }
         }
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                System.out.print(adjacencyMatrix[i][j] + " ");
-            }
-            System.out.println();
-        }
+        // for (int i = 0; i < n; i++) {
+        //     for (int j = 0; j < n; j++) {
+        //         System.out.print(adjacencyMatrix[i][j] + " ");
+        //     }
+        //     System.out.println();
+        // }
     }
 
     // Adjacency matrix generator for undirected graph (dunno if good one)
@@ -134,12 +146,12 @@ class Graph {
                 edges++;
             }
         }
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                System.out.print(ndAdjacencyMatrix[i][j] + " ");
-            }
-            System.out.println();
-        }
+        // for (int i = 0; i < n; i++) {
+        //     for (int j = 0; j < n; j++) {
+        //         System.out.print(ndAdjacencyMatrix[i][j] + " ");
+        //     }
+        //     System.out.println();
+        // }
     }
 
     // Generating vList based on adjacency matrix
@@ -513,9 +525,9 @@ class Graph {
             System.out.println("Graf nie zawiera cyklu Hamiltona");
             return;
         }
-        for (int i = 0; i < path.length; i++) {
-            System.out.print(path[i] + " ");
-        }
+        // for (int i = 0; i < path.length; i++) {
+        //     System.out.print(path[i] + " ");
+        // }
     }
 
     // Finding Hamiltonian cycle in directed graph using list of successors
@@ -523,8 +535,7 @@ class Graph {
     private boolean hasHamiltonianCycleDir(int[] path, int position) {
         int n = vList.size();
         if (position == n) {
-            if (vList.get(path[position - 1]).in.contains(vList.get(path[0]))
-                    || vList.get(path[position - 1]).out.contains(vList.get(path[0]))) {
+            if (vList.get(path[position - 1]).out.contains(vList.get(path[0]))) {
                 return true;
             } else {
                 return false;
@@ -533,7 +544,7 @@ class Graph {
         for (int i = 0; i < n; i++) {
             if (canGoDir(i, path, position)) {
                 path[position] = i;
-                if (hasHamiltonianCycle(path, position + 1))
+                if (hasHamiltonianCycleDir(path, position + 1))
                     return true;
                 path[position] = -1;
             }
@@ -552,8 +563,8 @@ class Graph {
     }
 
     public void getHamiltonianCycleDir() {
-        path = new int[ndAdjacencyMatrix.length];
-        for (int i = 0; i < ndAdjacencyMatrix.length; i++) {
+        path = new int[vList.size()];
+        for (int i = 0; i < vList.size(); i++) {
             path[i] = -1;
         }
         path[0] = 0;
@@ -568,53 +579,63 @@ class Graph {
 
     // Finding Eulerian cycle in undirected graph using adjacency matrix
 
-    private void dfsDir(Vertex v, Stack<Integer> stack) {
-        while (!v.out.isEmpty()) {
-            Vertex next = v.out.get(0);
-            v.out.remove(next);
-            dfsDir(next, stack);
-        }
-        stack.push(v.key);
-    }
-
-    public List<Integer> findEulerianCycle() {
-        Stack<Integer> stack = new Stack<>();
-        dfsDir(vList.get(0), stack);
-        for (Vertex v : vList) {
-            if (!v.out.isEmpty()) {
-                System.out.println("Graf nie zawiera cyklu Eulera");
-                return null;
+    public List<Integer> findEulerianCycleDir() {
+        int start = 0, inNotOut = 0;
+        for (int i = vList.size() - 1; i >= 0; i--) {
+            if (vList.get(i).in.size() != vList.get(i).out.size()) {
+                inNotOut++;
+                start = i;
             }
         }
-        List<Integer> eulerianCycle = new ArrayList<>();
-        while (!stack.isEmpty()) {
-            eulerianCycle.add(stack.pop());
+        if (inNotOut > 0) {
+            System.out.println("Graf nie zawiera cyklu Eulera");
+            return null;
         }
-        return eulerianCycle;
+        Stack<Integer> stack = new Stack<>();
+        Vector<Integer> path = new Vector<>();
+        while (!stack.isEmpty() || !vList.get(start).out.isEmpty()) {
+            if (vList.get(start).out.isEmpty()) {
+                path.add(start);
+                start = stack.pop();
+            } else {
+                for (int i = 0; i < vList.size(); i++) {
+                    if (vList.get(start).out.contains(vList.get(i))) {
+                        stack.push(start);
+                        vList.get(start).out.remove(vList.get(i));
+                        vList.get(i).in.remove(vList.get(start));
+                        start = i;
+                        break;
+                    }
+                }
+            }
+        }
+        path.add(start);
+        Collections.reverse(path);
+        return path;
     }
 
     // Finding Eulerian cycle in directed graph using list of successors
 
-    public List<Integer> findEulerianCycleDir() {
+    public List<Integer> findEulerianCycle() {
         Vector<Integer> adjacent = new Vector<>();
         for (int i = 0; i < ndAdjacencyMatrix.length; i++)
-            adjacent.add(accumulate(ndAdjacencyMatrix[i], 0));
-        int start = 0, numofodd = 0;
+            adjacent.add(sumOfAdj(ndAdjacencyMatrix[i], 0));
+        int start = 0, odd = 0;
         for (int i = ndAdjacencyMatrix.length - 1; i >= 0; i--) {
             if (adjacent.elementAt(i) % 2 == 1) {
-                numofodd++;
+                odd++;
                 start = i;
             }
         }
-        if (numofodd > 2) {
+        if (odd > 0) {
             System.out.println("Graf nie zawiera cyklu Eulera");
             return null;
         }
         Stack<Integer> stack = new Stack<>();
         Vector<Integer> path = new Vector<>();
         int current = start;
-        while (!stack.isEmpty() || accumulate(ndAdjacencyMatrix[current], 0) != 0) {
-            if (accumulate(ndAdjacencyMatrix[current], 0) == 0) {
+        while (!stack.isEmpty() || sumOfAdj(ndAdjacencyMatrix[current], 0) != 0) {
+            if (sumOfAdj(ndAdjacencyMatrix[current], 0) == 0) {
                 path.add(current);
                 current = stack.pop();
             } else {
@@ -634,7 +655,7 @@ class Graph {
         return path;
     }
 
-    private int accumulate(int[] arr, int sum) {
+    private int sumOfAdj(int[] arr, int sum) {
         for (int i : arr)
             sum += i;
         return sum;
